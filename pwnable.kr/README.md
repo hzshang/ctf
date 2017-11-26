@@ -61,7 +61,7 @@ c.interactive()
 ```
 
 ##### Method 2
-main return address is stored in `*(*(ebp-4)-4)`, change the value in ebp-4 to heap address where we write shell address
+main return address is stored in `*(ebp-4)-4`, change the value in ebp-4 to heap address where we write shell address
 ```
 from pwn import *
 c=process("./unlink")
