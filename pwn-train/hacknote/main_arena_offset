@@ -1,0 +1,62 @@
+#!/usr/bin/python2
+import argparse
+from pwn import *
+import os
+import shutil
+
+def parse_arg():
+    parser = argparse.ArgumentParser("get some libc's main_arena offset")
+    parser.add_argument('libc', help='libc name')
+    return parser.parse_args()
+
+
+def generate_program():
+    program = '''
+#include <stdio.h>
+#include <stdlib.h>
+int main() {
+    void *test_chunk = malloc(0x200);
+    void *splitter = malloc(0x20);
+    free(test_chunk);
+    printf("offset:%lld\\n", *(long long*)test_chunk);
+    getchar();
+    free(splitter);
+    return 0;
+}
+    '''
+    with open('__get_main_arena__.c', 'w') as f:
+        f.write(program)
+    compile_proc = \
+    s = process('gcc -Xlinker -rpath=$PWD/ __get_main_arena__.c -o __get_main_arena__', shell=True)
+    s.wait_for_close()
+    os.remove('__get_main_arena__.c')
+    return '__get_main_arena__'
+
+
+def main():
+    context.log_level = 'error'
+    libc = parse_arg().libc
+    logging = log.progress("finding offset...")
+    shutil.copy(libc, 'libc.so.6')
+    libc = 'libc.so.6'
+    program_name = generate_program()
+
+    p = process(program_name)
+    offset = int(p.recv().split(':')[1])
+    libs = p.libs()
+
+    base = None
+    for each in libs:
+        if each.endswith(libc):
+            base = libs[each]
+            break
+
+    os.remove(libc)
+    main_arena_offset = offset - base - 0x58
+    context.log_level='info'
+    logging.success('main arena offset:%s', hex(main_arena_offset))
+    os.remove(program_name)
+
+
+if __name__ == "__main__":
+    main()
