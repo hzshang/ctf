@@ -40,9 +40,23 @@ shellcode每个字节不能重复，总长度不超过24
 修改返回地址，重新执行write函数，泄漏got表，得到libc基地址，第二次read时跳转到system，执行/bin/sh  
 
 ### babyheap  
-通过修改堆结构的大小泄漏main_arena地址，得到libc地址，然后通过fastbin将malloc_hook地址修改为one_gadget地址
+通过修改堆结构的大小泄漏`main_arena`地址，得到libc地址，然后通过fastbin将`malloc_hook`地址修改为`one_gadget`地址
+
+### skmgr
+名字做检查时会泄露libc地址，通过double free将aoti的got表改为system地址。  
 
 
-  
+
+
+
+
+
+
+
+
+
+
+
+
 
 
