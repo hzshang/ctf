@@ -45,7 +45,8 @@ shellcode每个字节不能重复，总长度不超过24
 ### skmgr
 名字做检查时会泄露libc地址，通过double free将aoti的got表改为system地址。  
 
-
+### eztosay2
+调用read指令时会将rcx置为pc值，通过两次read执行shellcode
 
 
 
