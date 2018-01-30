@@ -1,2 +1,4 @@
+*core
+*.gdb_history
+*.txt
 *DS_Store
-*.idb
