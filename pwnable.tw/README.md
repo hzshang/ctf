@@ -12,7 +12,7 @@ pwnable.tw writeup
 
 ## double sort  
 - 泄露堆地址
-- scanf 遇到"+"字符时，不会修改指针的值，利用这一点绕过栈检查
+- scanf 遇到"+"字符时，不会修改指针指向的内存值，利用这一点绕过栈检查
 
 ## calc
 - 搞清楚计算表达式的逻辑
@@ -27,4 +27,17 @@ pwnable.tw writeup
 - 控制返回值，先泄露libc地址
 - 再跳转到main函数，跳转到libc的one_gadget
 
+## apple store
+checkout时会有一个彩蛋，当总额达到7174时会将iphone8的订单加入购物车，订单是一个结构体， 
+
+	struct unit{
+		char* name;
+		int price;
+		unit* next;
+		unit* back;
+	};
+
+但是最后彩蛋订单的内存实在栈上的！！利用这个bug，通过myread函数可以修改最后一个订单的信息，进而可以泄露出栈地址和libc地址。  
+本来是想将atoi的got表修改为system地址，但system的地址处不可写。  
+最后参考网上的方法，修改main函数的ebp值，通过换栈的方式将main函数的返回地址改为system地址。
 
