@@ -43,3 +43,6 @@ checkout时会有一个彩蛋，当总额达到7174时会将iphone8的订单加�
 
 ## seethefile
 [writeup](seethefile/README.md)  
+
+## babystack
+在栈上做文章，通过爆破的方法解出16位随机数，通过`magic_copy`,可以将libc的地址复制到栈上，继续爆破出libc的地址，将main函数返回地址改为`one_gadget`地址。
