@@ -69,3 +69,8 @@ checkout时会有一个彩蛋，当总额达到7174时会将iphone8的订单加�
 在除花是不做检查，通过double free可以对任意地址进行写操作，这里修改`malloc_hook`值为`one_gadget`值。  
 此时如果直接进行申请堆块，所有的`one_gadget`都无法满足条件，反复尝试以后，如果让double free 触发系统错误，会调用malloc函数，此时即可执行shell。  
 `one_gadget`值挑选比较坑，本地能过但远程一直上不去，一度怀疑自己思路有问题。好不容易找到了一份别人的writeup，发现只有`one_gadget`的值和别人不一样。
+
+## alive note
+做法和death note类似，这里修改的是atoi的got表，不过申请堆块要1200次左右，连接时间为60秒，意味着和主机的延迟不高于0.5ms！！！🌚反正我过了=，=  
+
+
