@@ -59,7 +59,7 @@ checkout时会有一个彩蛋，当总额达到7174时会将iphone8的订单加�
 
 ## Spirited Away
 - 泄露栈地址，libc地址。
-- 循环100次，利用sprintf将comment_size覆盖为一个更大的值。
+- 循环100次，利用sprintf将`comment_size`覆盖为一个更大的值。
 - 这时读入comment时覆盖name的指针为栈指针。
 - 下次malloc时得到的内存就是栈空间。
 - 读入name时覆盖survey返回值为`one_gadget`。
@@ -72,5 +72,39 @@ checkout时会有一个彩蛋，当总额达到7174时会将iphone8的订单加�
 
 ## alive note
 做法和death note类似，这里修改的是atoi的got表，不过申请堆块要1200次左右，连接时间为60秒，意味着和主机的延迟不高于0.5ms！！！🌚反正我过了=，=  
+
+## unexploitable
+题目就是要构造ROP链控制程序流程，主要难点在于程序并没有任何输出，没有办法得到libc的地址，got表里只有`read`，`sleep`，`libc_start_main`三个函数。
+在`__libc_csu_init`函数里，有以下几个代码块可供利用：
+
+
+	=>	.text:00000000004005D0                 mov     rdx, r15
+		.text:00000000004005D3                 mov     rsi, r14
+		.text:00000000004005D6                 mov     edi, r13d
+		.text:00000000004005D9                 call    qword ptr [r12+rbx*8]
+		.text:00000000004005DD                 add     rbx, 1
+		.text:00000000004005E1                 cmp     rbx, rbp
+		.text:00000000004005E4                 jnz     short loc_4005D0
+
+	=>	.text:00000000004005E6                 mov     rbx, [rsp+8]
+		.text:00000000004005EB                 mov     rbp, [rsp+10h]
+		.text:00000000004005F0                 mov     r12, [rsp+18h]
+		.text:00000000004005F5                 mov     r13, [rsp+20h]
+		.text:00000000004005FA                 mov     r14, [rsp+28h]
+		.text:00000000004005FF                 mov     r15, [rsp+30h]
+		.text:0000000000400604                 add     rsp, 38h
+		.text:0000000000400608                 retn
+
+因此可以通过read控制栈上的内容，进而控制寄存器 rdi，rsi，rdx，控制函数参数。
+同时，在libc中，sleep函数和execve函数相近，修改最后2个字节，就可以将sleep的got表写上execve的地址
+
+主要构造思路：
+
+- 换栈，将栈移到got表附近  
+- 修改sleep的got表为execve地址(最后三位已知，倒数第四位使用随机数碰撞，成功概率为1/16)  
+- 构造rop链  
+
+
+
 
 
