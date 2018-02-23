@@ -104,7 +104,16 @@ checkout时会有一个彩蛋，当总额达到7174时会将iphone8的订单加�
 - 修改sleep的got表为execve地址(最后三位已知，倒数第四位使用随机数碰撞，成功概率为1/16)  
 - 构造rop链  
 
+## kidding  
+这个题的gadget比较全，并且还有 `int 0x80;ret` 理论上只要rop链的足够长，x86系统的所有操作都可以实现。一开始放在本地跑这个程序  
 
+	ncat -vc ./kidding -kl 0.0.0.0 4444
 
+如果远程连接过去，发现除了0 1 2三个文件描述符，还有其他可以使用。  
+使用系统调用 dup2(5,0),dup2(8,1) 以后再执行bash，就可以正常进行交互。放在本地这种方法确实可以执行。[脚本参考](kidding/hack_dup.py)  
+但是远程环境似乎是跑在docker集群里，关掉 0 1 2 根本没有其他文件描述符可供使用，只能另外想其他办法。
 
+	hzshang@ubuntu:~$ ls -l /proc/27292/fd	total 0	lr-x------ 1 hzshang hzshang 64 Feb 23 10:40 0 -> pipe:[5806003]	l-wx------ 1 hzshang hzshang 64 Feb 23 10:40 1 -> pipe:[5806004]	lrwx------ 1 hzshang hzshang 64 Feb 23 10:40 2 -> /dev/pts/17	lrwx------ 1 hzshang hzshang 64 Feb 23 10:40 3 -> socket:[5808818]	lrwx------ 1 hzshang hzshang 64 Feb 23 10:40 4 -> socket:[5808851]	lr-x------ 1 hzshang hzshang 64 Feb 23 10:40 5 -> pipe:[5806003]	l-wx------ 1 hzshang hzshang 64 Feb 23 10:40 8 -> pipe:[5806004]
 
+想到的另外一个方法是和自己的一台服务器建立socket连接，最后却是连上了服务器，但是此时payload刚好用完，无法进行下一步控制。  
+最后在函数表里发现一个叫 `_dl_make_stack_executable`，一看名字就知道是要干什么的，查了一下，这还是到ctf原题，被搬到了pwnable.tw 上了 =，=。调用完这个函数，然后跳到栈上执行，和自己的服务器建立socket，然后dup2一下输入输出，反弹一个shell就可以了。本地脚本 hack.py，服务器脚本 nc.py
