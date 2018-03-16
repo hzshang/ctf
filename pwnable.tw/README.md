@@ -117,3 +117,71 @@ checkout时会有一个彩蛋，当总额达到7174时会将iphone8的订单加�
 
 想到的另外一个方法是和自己的一台服务器建立socket连接，最后却是连上了服务器，但是此时payload刚好用完，无法进行下一步控制。  
 最后在函数表里发现一个叫 `_dl_make_stack_executable`，一看名字就知道是要干什么的，查了一下，这还是到ctf原题，被搬到了pwnable.tw 上了 =，=。调用完这个函数，然后跳到栈上执行，和自己的服务器建立socket，然后dup2一下输入输出，反弹一个shell就可以了。本地脚本 hack.py，服务器脚本 nc.py
+
+## critical_heap++
+不得不吐槽一下，远程的环境和给的docker根本就不一样。。。  
+#### 第一种解法
+首先，一个比较明显的洞是在 `play_with_normal`函数里，有这样一句。content是可控的，但是`__printf_chunk`相比于printf多了更多的检查，禁止使用`%N$`的字符串，这样就没有办法做到任意地址写了，但是因为`__printf_chunk`的参数栈和我们输入的buf离得比较近，所以可以实现任意地址读。同时libc和堆地址也很容易通过申请一个堆块来leak出来。  
+
+    if ( opt == 1 )
+    {
+      printf("Content :");
+      _printf_chk(1LL, a1->content);
+    }
+
+接下来要做的就是把flag的内容读出来了，在调用localtime的函数里，(这个利用确实够骚，以前都没见过)，会调用`tzset_internal`，部分源代码如下
+
+	/* Examine the TZ environment variable.  */
+	tz = getenv ("TZ");
+	if (tz && *tz == '\0')
+	  /* User specified the empty string; use UTC explicitly.  */
+	  tz = "Universal";
+	/* A leading colon means "implementation defined syntax".
+	   We ignore the colon and always use the same algorithm:
+	   try a data file, and if none exists parse the 1003.1 syntax.  */
+	if (tz && *tz == ':')
+	  ++tz;
+	/* Check whether the value changed since the last run.  */
+	if (old_tz != NULL && tz != NULL && strcmp (tz, old_tz) == 0)
+	  /* No change, simply return.  */
+	  return;
+	if (tz == NULL)
+	  /* No user specification; use the site-wide default.  */
+	  tz = TZDEFAULT;
+	tz_rules[0].name = NULL;
+	tz_rules[1].name = NULL;
+	/* Save the value of `tz'.  */
+	free (old_tz);
+	old_tz = tz ? __strdup (tz) : NULL;
+	/* Try to read a data file.  */
+	__tzfile_read (tz, 0, NULL);
+	if (__use_tzfile)
+	  return
+
+因此，利用system_heap把TZ环境变量设为flag的路径，就可以直接把flag读到堆上面了。。
+#### 第二种解法（只在本地进行了测试）
+`get_current_path`源码如下，如果我们把PWD的环境变量直接设为`.`，`system_heap`的path指向的chunk可利用空间只有0x18个byte，然后，我们把PWD改为正常值，更新system_heap的时候，就会把`home/critical_heap++`这个路径写到愿来的chunk，此时刚好的覆盖下一个chunk的size大小。。。
+
+	27	char *
+	28	get_current_dir_name (void)
+	29	{
+	30	  char *pwd;
+	31	  struct stat64 dotstat, pwdstat;
+	32	
+	33	  pwd = getenv ("PWD");
+	34	  if (pwd != NULL
+	35	      && stat64 (".", &dotstat) == 0
+	36	      && stat64 (pwd, &pwdstat) == 0
+	37	      && pwdstat.st_dev == dotstat.st_dev
+	38	      && pwdstat.st_ino == dotstat.st_ino)
+	39	    /* The PWD value is correct.  Use it.  */
+	40	    return __strdup (pwd);
+	41	
+	42	  return __getcwd ((char *) NULL, 0);
+	43	}
+	44	
+有了上面的想法，一个思路就是利用堆块的override，将一个`fast_bin`的指针修改掉。  
+题目中有两个地方可以free。  
+在setenv时，如果添加之前的字符串指针数组的空间不够，重新malloc出一块新的地址空间，把原有的字符串指针拷贝到新数组里，最后把原数组空间free掉。  
+在调用localtime时，如果发现TZ环境变量不合法，就会把存储TZ字符串的空间free掉。  
+利用上面的方法，可以申请出一个unsortbin和fastbin，修改PWD修改unsortbin的size，利用从unsortbin里申请的堆块修改fastbin的前项指针为`malloc_hook`附近，就可以修改malloc hook的值，跳转到gadget地址上去。
