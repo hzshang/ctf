@@ -14,6 +14,7 @@ if len(sys.argv)==1:
     conn=process(pwn_file)
     pid=conn.pid
 else:
+    context.proxy=(socks.SOCKS5,"10.211.55.2",1080)
     conn=remote("chall.pwnable.tw",10500)
     pid=0
 
