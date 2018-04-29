@@ -165,6 +165,13 @@ checkout时会有一个彩蛋，当总额达到7174时会将iphone8的订单加�
 - libc中有 `_IO_file_write`的函数指针，控制rbx，使用该函数泄露libc
 - one_gadget 
 
+## bookwriter
+- leak libc
+- leak heap address
+- change top chunk size to trigger free
+- expand unsortbin size to control its content
+- fake unsortbin bk to change dl open hook to heap address
+- trigger error
 
 
 ## 以下题目不公开writeup
