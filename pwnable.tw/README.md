@@ -73,50 +73,6 @@ checkout时会有一个彩蛋，当总额达到7174时会将iphone8的订单加�
 ## alive note
 做法和death note类似，这里修改的是atoi的got表，不过申请堆块要1200次左右，连接时间为60秒，意味着和主机的延迟不高于0.5ms！！！🌚反正我过了=，=  
 
-## unexploitable
-题目就是要构造ROP链控制程序流程，主要难点在于程序并没有任何输出，没有办法得到libc的地址，got表里只有`read`，`sleep`，`libc_start_main`三个函数。
-在`__libc_csu_init`函数里，有以下几个代码块可供利用：
-
-
-	=>	.text:00000000004005D0                 mov     rdx, r15
-		.text:00000000004005D3                 mov     rsi, r14
-		.text:00000000004005D6                 mov     edi, r13d
-		.text:00000000004005D9                 call    qword ptr [r12+rbx*8]
-		.text:00000000004005DD                 add     rbx, 1
-		.text:00000000004005E1                 cmp     rbx, rbp
-		.text:00000000004005E4                 jnz     short loc_4005D0
-
-	=>	.text:00000000004005E6                 mov     rbx, [rsp+8]
-		.text:00000000004005EB                 mov     rbp, [rsp+10h]
-		.text:00000000004005F0                 mov     r12, [rsp+18h]
-		.text:00000000004005F5                 mov     r13, [rsp+20h]
-		.text:00000000004005FA                 mov     r14, [rsp+28h]
-		.text:00000000004005FF                 mov     r15, [rsp+30h]
-		.text:0000000000400604                 add     rsp, 38h
-		.text:0000000000400608                 retn
-
-因此可以通过read控制栈上的内容，进而控制寄存器 rdi，rsi，rdx，控制函数参数。
-同时，在libc中，sleep函数和execve函数相近，修改最后2个字节，就可以将sleep的got表写上execve的地址
-
-主要构造思路：
-
-- 换栈，将栈移到got表附近  
-- 修改sleep的got表为execve地址(最后三位已知，倒数第四位使用随机数碰撞，成功概率为1/16)  
-- 构造rop链  
-
-## kidding  
-这个题的gadget比较全，并且还有 `int 0x80;ret` 理论上只要rop链的足够长，x86系统的所有操作都可以实现。一开始放在本地跑这个程序  
-
-	ncat -vc ./kidding -kl 0.0.0.0 4444
-
-如果远程连接过去，发现除了0 1 2三个文件描述符，还有其他可以使用。  
-使用系统调用 dup2(5,0),dup2(8,1) 以后再执行bash，就可以正常进行交互。放在本地这种方法确实可以执行。[脚本参考](kidding/hack_dup.py)  
-但是远程环境似乎是跑在docker集群里，关掉 0 1 2 根本没有其他文件描述符可供使用，只能另外想其他办法。
-
-	hzshang@ubuntu:~$ ls -l /proc/27292/fd	total 0	lr-x------ 1 hzshang hzshang 64 Feb 23 10:40 0 -> pipe:[5806003]	l-wx------ 1 hzshang hzshang 64 Feb 23 10:40 1 -> pipe:[5806004]	lrwx------ 1 hzshang hzshang 64 Feb 23 10:40 2 -> /dev/pts/17	lrwx------ 1 hzshang hzshang 64 Feb 23 10:40 3 -> socket:[5808818]	lrwx------ 1 hzshang hzshang 64 Feb 23 10:40 4 -> socket:[5808851]	lr-x------ 1 hzshang hzshang 64 Feb 23 10:40 5 -> pipe:[5806003]	l-wx------ 1 hzshang hzshang 64 Feb 23 10:40 8 -> pipe:[5806004]
-
-想到的另外一个方法是和自己的一台服务器建立socket连接，最后却是连上了服务器，但是此时payload刚好用完，无法进行下一步控制。  
-最后在函数表里发现一个叫 `_dl_make_stack_executable`，一看名字就知道是要干什么的，查了一下，这还是到ctf原题，被搬到了pwnable.tw 上了 =，=。调用完这个函数，然后跳到栈上执行，和自己的服务器建立socket，然后dup2一下输入输出，反弹一个shell就可以了。本地脚本 hack.py，服务器脚本 nc.py
 
 ## critical_heap
 一个比较明显的洞是在 `play_with_normal`函数里，有这样一句。content是可控的，但是`__printf_chunk`相比于printf多了更多的检查，禁止使用`%N$`的字符串，这样就没有办法做到任意地址写了，但是因为`__printf_chunk`的参数栈和我们输入的buf离得比较近，所以可以实现任意地址读。同时libc和堆地址也很容易通过申请一个堆块来leak出来。  
@@ -158,12 +114,6 @@ checkout时会有一个彩蛋，当总额达到7174时会将iphone8的订单加�
 
 利用system_heap把TZ环境变量设为flag的路径，就可以直接把flag读到堆上面。  
 
-## deaslr
-- 把栈换成bss段
-- 调用gets会将libc地址残留到bss上
-- 控制好距离，使用ret-to-csu，将libc的地址pop给r12
-- libc中有 `_IO_file_write`的函数指针，控制rbx，使用该函数泄露libc
-- one_gadget 
 
 ## bookwriter
 - leak libc
@@ -175,4 +125,9 @@ checkout时会有一个彩蛋，当总额达到7174时会将iphone8的订单加�
 
 
 ## 以下题目不公开writeup
-### critical_heap++  
+
+- kidding
+- secret-of-my-heart
+- de-aslr
+- unexpolitable
+- critical-heap++  
