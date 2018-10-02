@@ -1,0 +1,27 @@
+version: '2'
+
+services:
+    pwn:
+        build: ./
+        image: defcon
+        volumes: 
+            - ./scripts:/scripts:ro
+            - ./service.conf:/service.conf:ro
+            - ./platforms:/platforms:ro
+            - ./fucking-mdk:/nonexistent/.mdk:ro
+            - ./fucking-usr-mdk:/usr/share/mdk:ro
+            - ./scripts:/scripts:ro
+
+        ports:
+            - "9999:9318"
+        expose:
+            - "9999"
+        pids_limit: 1024
+        cpus: 0.5
+        restart: unless-stopped
+        
+networks:
+    default:
+        external:
+            name: pwn
+

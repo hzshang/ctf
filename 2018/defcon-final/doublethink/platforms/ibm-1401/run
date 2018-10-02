@@ -1,0 +1,3 @@
+#!/bin/bash -e
+
+python $SCRIPTDIR/drive_emu.py ibm-1401 $1 $2 | i1401 -q /dev/stdin

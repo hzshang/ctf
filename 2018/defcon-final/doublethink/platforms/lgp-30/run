@@ -1,0 +1,3 @@
+#!/bin/bash -e
+
+python $SCRIPTDIR/drive_emu.py lgp-30 $1 $2 | lgp -q /dev/stdin

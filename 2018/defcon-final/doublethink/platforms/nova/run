@@ -1,0 +1,3 @@
+#!/bin/bash -e
+
+python $SCRIPTDIR/drive_emu.py nova $1 $2 | dgnova -q /dev/stdin

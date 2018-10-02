@@ -1,0 +1,10 @@
+#!/bin/bash -e
+
+#if [ -f /.dockerenv ]
+#then
+#	echo "Inside docker!"
+python $SCRIPTDIR/drive_emu.py mmix $1 $2 | $PLATDIR/mmix -i $PLATDIR/min.mmo
+#else
+#	echo "Outside docker..."
+#	docker run -it --rm -v $SCRIPTDIR:$SCRIPTDIR -v $PWD:$PWD python bash -c "cd $PWD; ./run $1 $2"
+#fi

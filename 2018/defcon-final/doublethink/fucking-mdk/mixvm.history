@@ -1,0 +1,3 @@
+load shellcode.mix
+pmem 100-200
+quit

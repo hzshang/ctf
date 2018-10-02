@@ -1,0 +1,9 @@
+
+TERM    EQU    19          
+        ORIG   100         
+START
+		JMP    HERE
+HERE
+		OUT    MSG(TERM)
+MSG     ALF    "hhh"
+        END    START
