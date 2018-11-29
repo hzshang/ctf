@@ -1,0 +1,207 @@
+syntax = "proto3";
+
+/* ========== */
+/* = COMMON = */
+/* ========== */
+
+message Empty {}
+
+enum MessageStatus {
+  PENDING = 0;
+  DELIVERED = 1;
+  READ = 2;
+  MISSING_USER = 3;
+  ERROR = 4;
+  MISSING_MESSAGE = 5;
+  CORRUPTED = 6;
+}
+
+message Message {
+  int64 id = 1;
+  User user_from = 2;
+  User user_to = 3;
+  bytes data = 4;
+  MessageStatus status = 5;
+  string created_at = 6;
+}
+
+message PublicKey {
+  int32 e = 1;
+  bytes n = 2;
+}
+
+message User {
+  int64 id = 1;
+  string name = 2;
+}
+
+message EventMessage {
+  Message message = 1;
+}
+
+message EventMessageStatus {
+  int64 message_id = 1;
+  MessageStatus status = 2;
+}
+
+message Event {
+  oneof payload {
+    EventMessageStatus event_message_status = 1;
+    EventMessage event_message = 2;
+  }
+}
+
+message RequestHealthCheck {
+  string service = 1;
+}
+
+message ResponseHealthCheck {
+  enum ServingStatus {
+    UNKNOWN = 0;
+    SERVING = 1;
+    NOT_SERVING = 2;
+  }
+  ServingStatus status = 1;
+}
+
+/* ======== */
+/* = NODE = */
+/* ======== */
+
+message RequestNodeRegister {
+  string name = 1;
+  string password = 2;
+}
+
+message RequestNodeLogin {
+  string name = 1;
+  string password = 2;
+}
+
+message ResponseNodeLogin {
+  string token = 1;
+}
+
+message RequestNodeSendMessage {
+  string user_to_name = 1;
+  string data = 2;
+}
+
+message ResponseNodeGetPublicKey {
+  string key = 1;
+}
+
+message RequestNodeGetMessages {
+  string user_name = 1;
+}
+
+message ResponseNodeGetMessages {
+  repeated Message messages = 1;
+}
+
+message RequestNodeGetMessage {
+  int64 message_id = 1;
+}
+
+message RequestNodeAddContact {
+  string user_name = 1;
+}
+
+message ResponseNodeGetContacts {
+  repeated string user_names = 1;
+}
+
+message RequestNodeDeleteContact {
+  string user_name = 1;
+}
+
+service Node {
+  rpc CheckHealth(RequestHealthCheck) returns (ResponseHealthCheck);
+  rpc Register(RequestNodeRegister) returns (Empty) {}
+  rpc Login(RequestNodeLogin) returns (ResponseNodeLogin) {}
+  rpc SendMessage(RequestNodeSendMessage) returns (Empty) {}
+  rpc GetPublicKey(Empty) returns (ResponseNodeGetPublicKey) {}
+  rpc GetUpdates(Empty) returns (stream Event) {}
+  rpc GetMessages(RequestNodeGetMessages) returns (ResponseNodeGetMessages) {}
+  rpc GetMessage(RequestNodeGetMessage) returns (Message) {}
+  rpc AddContact(RequestNodeAddContact) returns (Empty) {}
+  rpc GetContacts(Empty) returns (ResponseNodeGetContacts) {}
+}
+
+/* ========= */
+/* = CLOUD = */
+/* ========= */
+
+message RequestCloudRegisterUser {
+  string name = 1;
+  PublicKey public_key = 2;
+}
+
+message ResponseCloudRegisterUser {
+  int64 user_id = 2;
+}
+
+message RequestCloudGetUserPublicKey {
+  string name = 1;
+}
+
+message ResponseCloudGetUserPublicKey {
+  PublicKey public_key = 1;
+}
+
+message RequestCloudSendMessage {
+  string user_from_name = 1;
+  string user_to_name = 2;
+  bytes encrypted_data = 3;
+}
+
+message ResponseCloudSendMessage {
+  int64 message_id = 1;
+}
+
+message RequestCloudUpdateMessageStatus {
+  int64 message_id = 1;
+  MessageStatus status = 2;
+}
+
+message RequestCloudGetMessages {
+  string user_from_name = 1;
+  string user_to_name = 2;
+}
+
+message ResponseCloudGetMessages {
+  repeated Message messages = 1;
+}
+
+message RequestCloudGetMessage {
+  int64 message_id = 1;
+}
+
+message RequestCloudGetNodeUsers {
+  int64 node_id = 1;
+}
+
+message ResponseCloudGetNodeUsers {
+  repeated User users = 1;
+}
+
+message RequestCloudGetUserDialogs {
+  string user_name = 1;
+}
+
+message ResponseCloudGetUserDialogs {
+  repeated User users = 1;
+}
+
+service Cloud {
+  rpc CheckHealth(RequestHealthCheck) returns (ResponseHealthCheck);
+  rpc RegisterUser(RequestCloudRegisterUser) returns (ResponseCloudRegisterUser) {}
+  rpc GetUserPublicKey(RequestCloudGetUserPublicKey) returns (ResponseCloudGetUserPublicKey) {}
+  rpc SendMessage(RequestCloudSendMessage) returns (ResponseCloudSendMessage) {}
+  rpc UpdateMessageStatus(RequestCloudUpdateMessageStatus) returns (Empty) {}
+  rpc GetNodeUpdates(Empty) returns (stream Event) {}
+  rpc GetMessages(RequestCloudGetMessages) returns (ResponseCloudGetMessages) {}
+  rpc GetMessage(RequestCloudGetMessage) returns (Message) {}
+  rpc GetNodeUsers(RequestCloudGetNodeUsers) returns (ResponseCloudGetNodeUsers) {}
+  rpc GetUserDialogs(RequestCloudGetUserDialogs) returns (ResponseCloudGetUserDialogs) {}
+}

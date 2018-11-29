@@ -1,0 +1,78 @@
+version: '3'
+services:
+  db:
+    image: postgres
+    restart: always
+    network_mode: bridge
+    volumes:
+    - ./db_data_psql:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB: storage
+      POSTGRES_USER: identity_storage
+      POSTGRES_PASSWORD: identity_storage
+
+  identity_storage:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: always
+    network_mode: bridge
+    command: bash -c "/go/src/Web/auth/server & /go/src/Web/auth/gateway"
+    depends_on:
+    - db
+    links:
+    - db
+
+  statement_generator:
+    build:
+      context: ./reciepts
+      dockerfile: Dockerfile
+    restart: always
+    network_mode: bridge
+    command: bash -c "/go/src/statement_generator/main"
+    depends_on:
+    - processing
+    - identity_storage
+    links:
+    - processing
+    - identity_storage
+    
+  processing:
+    build:
+      context: ./web-processing
+      dockerfile: Dockerfile
+    restart: always
+    network_mode: bridge
+    volumes:
+      - ./db_data_mysql:/var/lib/mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: processing
+
+  backend:
+    build:
+      context: ./back_front/backend
+      dockerfile: Dockerfile
+    restart: always
+    network_mode: bridge
+    command: bash -c "/app/start.sh"
+    depends_on:
+    - identity_storage
+    - processing
+    - statement_generator
+    links:
+    - identity_storage
+    - processing
+    - statement_generator
+
+  frontend:
+    build:
+      context: ./back_front/frontend
+      dockerfile: Dockerfile
+    ports:
+    - 3333:80
+    restart: always
+    network_mode: bridge
+    depends_on:
+    - backend
+    links:
+    - backend

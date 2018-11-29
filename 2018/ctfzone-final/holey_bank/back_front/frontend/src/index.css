@@ -1,0 +1,102 @@
+@import '~antd/dist/antd.css';
+@import '../node_modules/leaflet/dist/leaflet.css';
+@import '~react-credit-cards/es/styles-compiled.css';
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: sans-serif;
+  background-color: #f0f2f5;
+}
+
+.leaflet-container {
+  height: 400px;
+  width: 100%;
+}
+
+.ant-layout-header {
+  padding: 0px;
+}
+
+.login-form {
+  max-width: 300px;
+}
+
+.login-form-forgot {
+  float: right;
+}
+
+.login-form-button {
+  width: 100%;
+}
+
+.profile-form {
+  padding: 24px;
+  border: 1px solid #d9d9d9;
+  border-radius: 6px;
+}
+
+.card-button-blue {
+  background-color: #5b81c2;
+  border-color: #5b81c2;
+  color: white;
+}
+
+.card-button-blue:hover {
+  background-color: #639ee6;
+  border-color: #639ee6;
+  color: white;
+}
+
+.card-button-blue:focus {
+  background-color: #639ee6;
+  border-color: #639ee6;
+  color: white;
+}
+
+.card-button-green {
+  background-color: #308d35;
+  border-color: #308d35;
+  color: white;
+}
+
+.card-button-green:hover {
+  background-color: #34a03a;
+  border-color: #34a03a;
+  color: white;
+}
+
+.card-button-green:hover {
+  background-color: #34a03a;
+  border-color: #34a03a;
+  color: white;
+}
+
+.card-button-red {
+  background-color: #b076b2;
+  border-color: #b076b2;
+  color: white;
+}
+
+.card-button-red:hover {
+  background-color: #c98bcb;
+  border-color: #c98bcb;
+  color: white;
+}
+
+.card-button-red:focus {
+  background-color: #c98bcb;
+  border-color: #c98bcb;
+  color: white;
+}
+
+.center-vertical-horizontal {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.center-horizontal {
+  margin: auto;
+}

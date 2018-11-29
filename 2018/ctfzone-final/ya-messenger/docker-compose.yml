@@ -1,0 +1,32 @@
+version: '3'
+
+services:
+  node:
+    build: .
+    restart: always
+    ports:
+      - 3001:31338
+    environment:
+      NODE_CLOUD_ADDR: 100.100.100.110:1337
+      NODE_DATABASE: 'postgres://node:node@node-db:5432/node?sslmode=disable'
+      NODE_AUTH_SECRET: 'P/pDEy9ZawSyHFjk3P+1ffsrH/FaC2SW/gQ8yrsErQ4=.ekSq3QJTTQTgmdy/rP4I+CmU90k77cNqAMhmswGZIAo=.dVNoEIqKuIryiUjzsjjv9vv6gASVPOFwSNvGMYBaJmU='
+    volumes:
+      - ./challenge:/app/challenge
+    networks:
+      - default
+    command: node-server
+
+  node-db:
+    image: postgres
+    restart: always
+    environment:
+      POSTGRES_DB: node
+      POSTGRES_USER: node
+      POSTGRES_PASSWORD: node
+    volumes:
+      - ./postgres-node:/var/lib/postgresql/data
+    networks:
+      - default
+
+networks:
+  default:

@@ -1,0 +1,97 @@
+syntax = "proto3";
+
+package identity;
+
+import "google/api/annotations.proto";
+
+service IdentityStorage {
+
+    rpc Register(Authentication) returns (Response) {
+        option (google.api.http) = {
+            post: "/v1/register"
+            body: "*"
+        };
+    }
+
+    rpc Authenticate(Authentication) returns (Response) {
+        option (google.api.http) = {
+            post: "/v1/authenticate"
+            body: "*"
+        };
+    }
+
+    rpc SetInfo(Identity) returns (Response) {
+        option (google.api.http) = {
+            post: "/v1/set_info"
+            body: "*"
+        };
+    }
+
+    rpc GetInfoByAuthentication(Authentication) returns (Identity) {
+        option (google.api.http) = {
+            post: "/v1/authentication_get_info"
+            body: "*"
+        };
+    }
+
+    rpc GetInfo(IdentityId) returns (Identity) {
+        option (google.api.http) = {
+            get: "/v1/get_info/{id}"
+        };
+    }
+
+    rpc GetAllUsers(None) returns (Authentications) {
+    option (google.api.http) = {
+            get: "/v1/get_all_users"
+        };
+    }
+}
+
+message None {
+
+}
+
+message Authentications {
+    repeated Authentication authentications = 1;
+}
+
+message Response {
+    bool result = 1;
+    string message = 2;
+}
+
+message AuthResponse {
+    Response resp = 1;
+    string token = 2;
+}
+
+message Authentication {
+    int32 id = 1;
+    // @inject_tag: sql:",unique"
+    string username = 2;
+    string password = 3;
+}
+
+message Passport {
+    int32 id = 1;
+    // @inject_tag: sql:",unique"
+    int32 passport_number = 2;
+    string full_name = 3;
+    string residence = 4;
+}
+
+message IdentityId {
+    int32 id = 1;
+}
+
+message Identity {
+    int32 id = 1;
+    int32 authentication_id = 2;
+    Authentication authentication = 3;
+    int32 passport_id = 4;
+    Passport passport = 5;
+}
+
+message Storage {
+    repeated Identity identities = 1;
+}

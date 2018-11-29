@@ -1,0 +1,5 @@
+ERROR_EMPTY_LOGIN_OR_PASS = 'Username or password is empty'
+ERROR_FIELD_EMPTY = 'Missed required field: '
+ERROR_NO_MESSAGE = 'No message'
+ERROR_UNAUTHORIZED = 'Not authorized'
+ERROR_OK = 'Ok'
