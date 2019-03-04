@@ -30,4 +30,8 @@
 递归时间太长，只能dp，搞了一天，不能解决道路之间的环问题。  
 
 ## house of card  
-利用了一个CVE，使用bpf的bug拿shell
+利用了一个CVE，使用bpf的bug拿root shell
+
+## heapstorm
+使用large bin插链过程来在0x13370000段上写入两个地址，然后用unsort bin分配出来，实现任意地址写。
+
