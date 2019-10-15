@@ -1,0 +1,10 @@
+d
+break *0x555555560C52
+commands
+    set logging on
+    x/6bx *(long*)(*(long*)($rsp+0x18)+0x10)
+    echo \n
+    set logging off
+    continue
+end
+run 123456 1235
