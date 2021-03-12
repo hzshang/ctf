@@ -46,7 +46,7 @@
     "raf": "3.4.0",
     "react": "^16.5.1",
     "react-credit-cards": "^0.7.0",
-    "react-dev-utils": "^5.0.2",
+    "react-dev-utils": "^11.0.4",
     "react-dom": "^16.5.1",
     "react-leaflet": "^2.1.1",
     "react-redux": "^5.0.7",
